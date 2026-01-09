@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+{{ traitImport }}
+
+class {{ class }} extends Model
+{
+    use HasFactory, SoftDeletes, {{ traitName }};
+
+    /** @var array<int, string> */
+    protected $guarded = ['id'];
+
+    /** @var array<int, string> */
+    protected $dates = ['deleted_at'];
+
+    /** @var bool */
+    public $timestamps = true;
+}
