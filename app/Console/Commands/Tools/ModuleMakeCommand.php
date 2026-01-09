@@ -9,35 +9,40 @@ use Illuminate\Support\Str;
 class ModuleMakeCommand extends Command
 {
     protected $signature = 'make:module {name} 
-                        {--model : Crear solo el modelo}
-                        {--m|migration : Crear solo la migración}
-                        {--c|controller : Crear solo el controlador}
-                        {--r|request : Crear solo los requests}
-                        {--p|policy : Crear solo la policy}
-                        {--f|factory : Crear solo el factory}
-                        {--s|seeder : Crear solo el seeder}
-                        {--all : Crear la suite completa}';
-    protected $description = 'Crea la suite completa de un módulo (Modelo, CRUD API, Migración, Requests, Policy, Factory y Seeder) para Landlord o Tenant';
+                            {--model : Crear solo el modelo}
+                            {--m|migration : Crear solo la migración}
+                            {--c|controller : Crear solo el controlador}
+                            {--r|request : Crear solo los requests}
+                            {--p|policy : Crear solo la policy}
+                            {--f|factory : Crear solo el factory}
+                            {--s|seeder : Crear solo el seeder}
+                            {--all : Crear la suite completa}';
+
+    protected $description = 'Crea componentes de un módulo de forma selectiva para Landlord o Tenant';
 
     public function handle()
     {
-        $name = $this->argument('name');
+        // LIMPIEZA DE NOMBRE: Si el usuario mete "LandLord/Tenant", nos quedamos solo con "Tenant"
+        $inputName = $this->argument('name');
+        $name = Str::studly(basename(str_replace(['\\', '/'], '/', $inputName)));
+
         $options = $this->options();
 
-        // Si escribes --all o NO escribes ninguna bandera, se hace TODO
-        $all = $options['all'] || !($options['model'] || $options['migration'] || $options['controller'] || $options['request'] || $options['policy'] || $options['factory'] || $options['seeder']);
+        // Determinar si quiere TODO o piezas sueltas
+        $anyOption = $options['model'] || $options['migration'] || $options['controller'] || 
+                     $options['request'] || $options['policy'] || $options['factory'] || $options['seeder'];
+        
+        $all = $options['all'] || !$anyOption;
 
-        // Pregunta interactiva (esto se mantiene siempre porque define carpetas)
-        $choice = $this->choice("¿Contexto para '{$name}'?", ['Landlord', 'Tenant'], 1);
+        // Pregunta interactiva para el contexto
+        $choice = $this->choice("¿Contexto para el módulo '{$name}'?", ['Landlord', 'Tenant'], 1);
         $isTenant = ($choice === 'Tenant');
         $context = $isTenant ? 'Tenant' : 'LandLord';
 
-        $this->info("🛠️  Procesando componentes para: {$name}");
+        $this->info("🛠️  Procesando componentes para: {$name} en contexto {$context}");
 
-        // --- EJECUCIÓN SELECTIVA ---
-
-        // 1. Modelo (Se crea si pides --all, --model, o si pides piezas que dependen de él como el Controller)
-        if ($all || $options['model'] || $options['controller']) {
+        // 1. Modelo
+        if ($all || $options['model']) {
             $this->createModel($name, $context, $isTenant);
         }
 
@@ -61,15 +66,15 @@ class ModuleMakeCommand extends Command
         if ($all || $options['factory']) $this->createFactory($name, $context);
         if ($all || $options['seeder'])  $this->createSeeder($name, $context);
 
-        $this->info("✅ Proceso de '{$name}' finalizado con éxito.");
+        $this->info("✅ Proceso de '{$name}' finalizado.");
     }
 
-    /**
-     * Lógica para el Modelo (Usa Stub Personalizado)
-     */
     protected function createModel($name, $context, $isTenant)
     {
-        $stub = File::get(base_path('stubs/model.multitenant.stub'));
+        $stubPath = base_path('stubs/model.multitenant.stub');
+        if (!File::exists($stubPath)) return $this->error("No existe el stub de modelo.");
+
+        $stub = File::get($stubPath);
         
         $traitImport = $isTenant 
             ? 'use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;' 
@@ -87,13 +92,12 @@ class ModuleMakeCommand extends Command
         $this->saveFile($path, $content);
     }
 
-    /**
-     * Lógica para el Controlador (Usa Stub Personalizado)
-     */
     protected function createController($name, $context)
     {
-        $stub = File::get(base_path('stubs/controller.multitenant.stub'));
-        
+        $stubPath = base_path('stubs/controller.multitenant.stub');
+        if (!File::exists($stubPath)) return $this->error("No existe el stub de controlador.");
+
+        $stub = File::get($stubPath);
         $baseController = "Base{$context}Controller";
 
         $content = str_replace(
@@ -106,12 +110,11 @@ class ModuleMakeCommand extends Command
         $this->saveFile($path, $content);
     }
 
-    /**
-     * Lógica para los Form Requests (Usa Stub Personalizado)
-     */
     protected function createRequest($name, $context)
     {
-        $stub = File::get(base_path('stubs/request.multitenant.stub'));
+        $stubPath = base_path('stubs/request.multitenant.stub');
+        if (!File::exists($stubPath)) return $this->error("No existe el stub de request.");
+        $stub = File::get($stubPath);
 
         foreach (['Store', 'Update'] as $type) {
             $className = "{$type}{$name}Request";
@@ -126,16 +129,14 @@ class ModuleMakeCommand extends Command
         }
     }
 
-    /**
-     * Lógica para la Migración (Usa Stub Personalizado)
-     */
     protected function createMigration($name, $isTenant)
     {
-        $stub = File::get(base_path('stubs/migration.multitenant.stub'));
+        $stubPath = base_path('stubs/migration.multitenant.stub');
+        if (!File::exists($stubPath)) return $this->error("No existe el stub de migración.");
+        $stub = File::get($stubPath);
         
         $tableName = Str::snake(Str::pluralStudly($name));
         $fileName = date('Y_m_d_His') . "_create_{$tableName}_table.php";
-
         $content = str_replace(['{{ table }}'], [$tableName], $stub);
 
         $folder = $isTenant ? 'tenant' : 'landlord';
@@ -144,9 +145,6 @@ class ModuleMakeCommand extends Command
         $this->saveFile($path, $content);
     }
 
-    /**
-     * Lógica para la Policy
-     */
     protected function createPolicy($name, $context)
     {
         $this->call('make:policy', [
@@ -155,9 +153,6 @@ class ModuleMakeCommand extends Command
         ]);
     }
 
-    /**
-     * Lógica para el Factory
-     */
     protected function createFactory($name, $context)
     {
         $this->call('make:factory', [
@@ -166,9 +161,6 @@ class ModuleMakeCommand extends Command
         ]);
     }
 
-    /**
-     * Lógica para el Seeder
-     */
     protected function createSeeder($name, $context)
     {
         $this->call('make:seeder', [
@@ -176,9 +168,6 @@ class ModuleMakeCommand extends Command
         ]);
     }
 
-    /**
-     * Auxiliar para guardar archivos y crear carpetas
-     */
     protected function saveFile($path, $content)
     {
         $directory = dirname($path);
@@ -187,7 +176,7 @@ class ModuleMakeCommand extends Command
         }
 
         if (File::exists($path)) {
-            $this->error("Archivo ya existe: {$path}");
+            $this->warn("El archivo ya existe, saltando: {$path}");
             return;
         }
 
