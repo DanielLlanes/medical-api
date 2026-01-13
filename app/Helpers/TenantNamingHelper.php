@@ -2,24 +2,30 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 class TenantNamingHelper
 {
     /**
-     * Devuelve únicamente el prefijo configurado.
-     * Útil para el comando db:clear o validaciones.
+     * Prefijo estable del sistema (DBs_medical_api)
      */
-    public static function getDbPrefix(): string 
+    public static function getDbPrefix(): string
     {
-        $rawPrefix = Config::get('custom.bd_prefix', 'medical');
-        // Limpiamos y formateamos el prefijo: DBs_medical
-        return 'DBs_' . Str::replace(['-', '_'], '', Str::slug($rawPrefix));
+        $main = config('custom.db_main_prefix', 'DBs');
+        $app  = config('custom.app_name_slug', 'medicalapi');
+
+        $cleanApp = Str::of($app)
+            ->lower()
+            ->replace([' ', '-'], '')
+            ->replaceMatches('/[^a-z0-9_]/', '')
+            ->replaceMatches('/_+/', '_')
+            ->trim('_');
+
+        return "{$main}_{$cleanApp}";
     }
 
     /**
-     * Genera un sufijo aleatorio.
+     * Sufijo corto único
      */
     public static function getDbSuffix(): string
     {
@@ -27,16 +33,22 @@ class TenantNamingHelper
     }
 
     /**
-     * Une las piezas para crear el nombre final.
+     * Nombre final de base de datos tenant
      */
     public static function generateDatabaseName(string $tenantName): string
     {
-        $prefix = self::getDbPrefix(); // Llamamos a la función independiente
-        $slug = Str::slug($tenantName, '_');
+        $prefix = self::getDbPrefix();
+
+        $slug = Str::of($tenantName)
+            ->lower()
+            ->replace([' ', '-'], '_')
+            ->replaceMatches('/[^a-z0-9_]/', '')
+            ->replaceMatches('/_+/', '_')
+            ->trim('_');
+
         $suffix = self::getDbSuffix();
 
-        $fullName = "{$prefix}_{$slug}_{$suffix}";
 
-        return substr($fullName, 0, 45);
+        return substr("{$prefix}_{$slug}_{$suffix}", 0, 45);
     }
 }

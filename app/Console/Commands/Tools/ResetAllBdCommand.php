@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Tools; // <-- Esta es la línea que faltaba
 
 use App\Helpers\TenantNamingHelper;
 use Illuminate\Console\Command;
@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class ResetAllBdCommand extends Command
 {
     protected $signature = 'db:clear';
+
     protected $description = 'Borra bases de datos con prefijo y reinicia Landlord (Solo Desarrollo)';
 
     public function handle()
@@ -19,7 +20,7 @@ class ResetAllBdCommand extends Command
             return 1;
         }
 
-        $prefix = TenantNamingHelper::getDbPrefix(); 
+        $prefix = TenantNamingHelper::getDbPrefix();
 
         $this->warn("⚠️  ESTÁS A PUNTO DE BORRAR TODAS LAS DB QUE EMPIECEN CON: {$prefix}");
         
@@ -30,13 +31,12 @@ class ResetAllBdCommand extends Command
             
             foreach ($databases as $db) {
                 $name = $db->Database; // En MySQL la columna se llama 'Database'
-                
                 if (str_starts_with($name, $prefix)) {
                     DB::connection('landlord')->statement("DROP DATABASE `{$name}`");
                     $this->info("🗑️  Eliminada: {$name}");
                 }
             }
-
+            
             // 2. Limpiar conexiones para evitar conflictos de "Base de datos no encontrada"
             DB::purge('landlord');
             DB::purge('tenant');
