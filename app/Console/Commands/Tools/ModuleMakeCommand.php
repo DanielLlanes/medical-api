@@ -28,13 +28,14 @@ class ModuleMakeCommand extends Command
 
         $options = $this->options();
         $any = $options['model'] || $options['migration'] || $options['controller'] ||
-               $options['request'] || $options['policy'] || $options['factory'] || $options['seeder'];
+               $options['request'] || $options['policy'] || $options['factory'] || 
+               $options['seeder'] || $options['resource'];
 
         $all = $options['all'] || !$any;
 
         $choice = $this->choice("Contexto del módulo '{$name}'", ['Landlord', 'Tenant'], 1);
-        $isTenant = $choice === 'Tenant';
-        $context = $isTenant ? 'Tenant' : 'Landlord';
+        $context = Str::studly(strtolower($choice)); 
+        $isTenant = $context === 'Tenant';
 
         $this->info("🧩 Creando {$name} en {$context}");
 
@@ -50,15 +51,10 @@ class ModuleMakeCommand extends Command
         $this->info("✅ {$name} generado");
     }
 
-    // -------------------- MODEL --------------------
-
     protected function createModel($name, $context, $isTenant)
     {
         $stub = base_path('stubs/model.multitenant.stub');
-        if (!File::exists($stub)) {
-            $this->error('Falta stubs/model.multitenant.stub');
-            return;
-        }
+        if (!File::exists($stub)) return $this->error('Falta stubs/model.multitenant.stub');
 
         $traitImport = $isTenant
             ? 'use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;'
@@ -75,38 +71,32 @@ class ModuleMakeCommand extends Command
         $this->save(app_path("Models/{$context}/{$name}.php"), $content);
     }
 
-    // -------------------- CONTROLLER --------------------
-
     protected function createController($name, $context)
     {
         $stub = base_path('stubs/controller.multitenant.stub');
-        if (!File::exists($stub)) {
-            $this->error('Falta stubs/controller.multitenant.stub');
-            return;
-        }
+        if (!File::exists($stub)) return $this->error('Falta stub');
 
         $content = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ baseController }}'],
-            ["App\\Http\\Controllers\\{$context}", "{$name}Controller", "Base{$context}Controller"],
+            ['{{ namespace }}', '{{ class }}', '{{ baseController }}', '{{ context }}'],
+            [
+                "App\\Http\\Controllers\\{$context}", 
+                "{$name}Controller", 
+                "Base{$context}Controller",
+                $context // <--- Esto pondrá 'Landlord' o 'Tenant' en el stub
+            ],
             File::get($stub)
         );
 
         $this->save(app_path("Http/Controllers/{$context}/{$name}Controller.php"), $content);
     }
 
-    // -------------------- REQUESTS --------------------
-
     protected function createRequests($name, $context)
     {
         $stub = base_path('stubs/request.multitenant.stub');
-        if (!File::exists($stub)) {
-            $this->error('Falta stubs/request.multitenant.stub');
-            return;
-        }
+        if (!File::exists($stub)) return $this->error('Falta stubs/request.multitenant.stub');
 
         foreach (['Store', 'Update'] as $type) {
             $class = "{$type}{$name}Request";
-
             $content = str_replace(
                 ['{{ namespace }}', '{{ class }}'],
                 ["App\\Http\\Requests\\{$context}\\{$name}", $class],
@@ -117,86 +107,54 @@ class ModuleMakeCommand extends Command
         }
     }
 
-    // -------------------- MIGRATION --------------------
-
     protected function createMigration($name, $isTenant)
     {
         $stub = base_path('stubs/migration.multitenant.stub');
-        if (!File::exists($stub)) {
-            $this->error('Falta stubs/migration.multitenant.stub');
-            return;
-        }
+        if (!File::exists($stub)) return $this->error('Falta stubs/migration.multitenant.stub');
 
         $table = Str::snake(Str::pluralStudly($name));
         $file = date('Y_m_d_His') . "_create_{$table}_table.php";
-
         $content = str_replace('{{ table }}', $table, File::get($stub));
-
         $folder = $isTenant ? 'tenant' : 'landlord';
 
         $this->save(database_path("migrations/{$folder}/{$file}"), $content);
     }
 
-    // -------------------- OTHERS --------------------
-
-    protected function createPolicy($name, $context)
-    {
-        $this->call('make:policy', [
-            'name' => "{$context}/{$name}Policy",
-            '--model' => "App\\Models\\{$context}\\{$name}"
-        ]);
-    }
-
-    protected function createFactory($name, $context)
-    {
-        $this->call('make:factory', [
-            'name' => "{$context}/{$name}Factory",
-            '--model' => "App\\Models\\{$context}\\{$name}"
-        ]);
-    }
-
-    protected function createSeeder($name, $context)
-    {
-        $this->call('make:seeder', [
-            'name' => "{$context}/{$name}Seeder"
-        ]);
-    }
-
-    // -------------------- FILE HELPER --------------------
-
-    protected function save($path, $content)
-    {
-        if (!File::isDirectory(dirname($path))) {
-            File::makeDirectory(dirname($path), 0755, true);
-        }
-
-        if (File::exists($path)) {
-            $this->warn("⏭ {$path} ya existe");
-            return;
-        }
-
-        File::put($path, $content);
-        $this->line("✔ {$path}");
-    }
-
     protected function createResource($name, $context)
     {
         $stubPath = base_path('stubs/resource.multitenant.stub');
-        if (!File::exists($stubPath)) {
-            $this->warn('No existe el stub de resource.');
-            return;
-        }
-
-        $stub = File::get($stubPath);
+        if (!File::exists($stubPath)) return $this->warn('No existe el stub de resource.');
 
         $content = str_replace(
             ['{{ namespace }}', '{{ class }}'],
             ["App\\Http\\Resources\\{$context}", "{$name}Resource"],
-            $stub
+            File::get($stubPath)
         );
 
-        $path = app_path("Http/Resources/{$context}/{$name}Resource.php");
-        $this->save($path, $content);
+        $this->save(app_path("Http/Resources/{$context}/{$name}Resource.php"), $content);
     }
 
+    protected function createPolicy($name, $context)
+    {
+        $this->call('make:policy', ['name' => "{$context}/{$name}Policy", '--model' => "App\\Models\\{$context}\\{$name}"]);
+    }
+
+    protected function createFactory($name, $context)
+    {
+        $this->call('make:factory', ['name' => "{$context}/{$name}Factory", '--model' => "App\\Models\\{$context}\\{$name}"]);
+    }
+
+    protected function createSeeder($name, $context)
+    {
+        $this->call('make:seeder', ['name' => "{$context}/{$name}Seeder"]);
+    }
+
+    protected function save($path, $content)
+    {
+        if (!File::isDirectory(dirname($path))) File::makeDirectory(dirname($path), 0755, true);
+        if (File::exists($path)) return $this->warn("⏭ {$path} ya existe");
+
+        File::put($path, $content);
+        $this->line("✔ {$path}");
+    }
 }
