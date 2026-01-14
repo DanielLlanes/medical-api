@@ -23,6 +23,7 @@ return new class extends Migration
             // Estado y Relación
             $table->foreignId('plan_id')->constrained(); 
             $table->enum('status', ['trialing', 'active', 'past_due', 'suspended'])->default('trialing');
+            $table->timestamp('verified_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('code')->unique();
             $table->timestamps();

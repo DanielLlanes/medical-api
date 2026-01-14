@@ -24,8 +24,9 @@ class Tenant extends SpatieTenant
         'database', 
         'plan_id', 
         'status',
-        'is_active', // Falta este
-        'code'       // Falta este
+        'is_active',
+        'code',
+        'verified_at'
     ];
 
     /**
