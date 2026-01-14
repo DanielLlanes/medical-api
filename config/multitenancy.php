@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\LandLord\Tenant;
+use App\Models\Landlord\Tenant;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Mail\SendQueuedMailable;

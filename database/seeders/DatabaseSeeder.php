@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Multitenancy\Models\Tenant;
+use Database\Seeders\Landlord\PlanSeeder;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DatabaseSeeder extends Seeder
 {
@@ -27,6 +28,12 @@ class DatabaseSeeder extends Seeder
 
     public function runLandlordSpecificSeeders()
     {
-        // run landlord specific seeders
+        // $this->call([
+        //     PlanSeeder::class,
+        //     // Aquí puedes agregar otros seeders del landlord en el futuro
+        //     // UserLandlordSeeder::class,
+        // ]);
+
+        $this->call(PlanSeeder::class);
     }
 }
