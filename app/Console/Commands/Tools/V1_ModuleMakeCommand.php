@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
-class ModuleMakeCommand extends Command
+class V1_ModuleMakeCommand extends Command
 {
     protected $signature = 'make:module {name}
         {--model}
@@ -19,12 +19,12 @@ class ModuleMakeCommand extends Command
         {--res|resource}
         {--all}';
 
-    protected $description = 'Crea un módulo Landlord o Tenant con inyección automática de Traits y Requests';
+    protected $description = 'Crea un módulo Landlord o Tenant usando stubs personalizados';
 
     public function handle()
     {
         $raw = $this->argument('name');
-        $name = Str::studly(basename(str_replace(['\\', '/'], '/', $raw)));
+        $name = Str::studly(basename(str_replace(['\\','/'], '/', $raw)));
 
         $options = $this->options();
         $any = $options['model'] || $options['migration'] || $options['controller'] ||
@@ -37,19 +37,18 @@ class ModuleMakeCommand extends Command
         $context = Str::studly(strtolower($choice)); 
         $isTenant = $context === 'Tenant';
 
-        $this->info("🧩 Generando arquitectura para: {$name} en {$context}");
+        $this->info("🧩 Creando {$name} en {$context}");
 
-        // El orden importa: Primero Requests para que el Controller pueda referenciarlos
-        if ($all || $options['request'])    $this->createRequests($name, $context);
         if ($all || $options['model'])      $this->createModel($name, $context, $isTenant);
         if ($all || $options['controller']) $this->createController($name, $context);
+        if ($all || $options['request'])    $this->createRequests($name, $context);
         if ($all || $options['migration'])  $this->createMigration($name, $isTenant);
         if ($all || $options['policy'])     $this->createPolicy($name, $context);
         if ($all || $options['factory'])    $this->createFactory($name, $context);
         if ($all || $options['seeder'])     $this->createSeeder($name, $context);
         if ($all || $options['resource'])   $this->createResource($name, $context);
 
-        $this->info("✅ Módulo {$name} generado exitosamente.");
+        $this->info("✅ {$name} generado");
     }
 
     protected function createModel($name, $context, $isTenant)
@@ -62,13 +61,10 @@ class ModuleMakeCommand extends Command
             : 'use Spatie\Multitenancy\Models\Concerns\UsesLandlordConnection;';
 
         $traitName = $isTenant ? 'UsesTenantConnection' : 'UsesLandlordConnection';
-        
-        // Generar prefijo automático (Ej: User -> U)
-        $prefix = strtoupper(substr($name, 0, 1));
 
         $content = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ traitImport }}', '{{ traitName }}', '{{ prefix }}'],
-            ["App\\Models\\{$context}", $name, $traitImport, $traitName, $prefix],
+            ['{{ namespace }}', '{{ class }}', '{{ traitImport }}', '{{ traitName }}'],
+            ["App\\Models\\{$context}", $name, $traitImport, $traitName],
             File::get($stub)
         );
 
@@ -78,33 +74,15 @@ class ModuleMakeCommand extends Command
     protected function createController($name, $context)
     {
         $stub = base_path('stubs/controller.multitenant.stub');
-        if (!File::exists($stub)) return $this->error('Falta stubs/controller.multitenant.stub');
-
-        $storeRequestClass = "Store{$name}Request";
-        $updateRequestClass = "Update{$name}Request";
+        if (!File::exists($stub)) return $this->error('Falta stub');
 
         $content = str_replace(
-            [
-                '{{ namespace }}', 
-                '{{ class }}', 
-                '{{ baseController }}', 
-                '{{ context }}',
-                '{{ model }}',
-                '{{ storeRequestClass }}',
-                '{{ updateRequestClass }}',
-                '{{ storeRequestPath }}',
-                '{{ updateRequestPath }}'
-            ],
+            ['{{ namespace }}', '{{ class }}', '{{ baseController }}', '{{ context }}'],
             [
                 "App\\Http\\Controllers\\{$context}", 
                 "{$name}Controller", 
                 "Base{$context}Controller",
-                $context,
-                $name,
-                $storeRequestClass,
-                $updateRequestClass,
-                "App\\Http\\Requests\\{$context}\\{$name}\\{$storeRequestClass}",
-                "App\\Http\\Requests\\{$context}\\{$name}\\{$updateRequestClass}"
+                $context // <--- Esto pondrá 'Landlord' o 'Tenant' en el stub
             ],
             File::get($stub)
         );
@@ -158,18 +136,12 @@ class ModuleMakeCommand extends Command
 
     protected function createPolicy($name, $context)
     {
-        $this->call('make:policy', [
-            'name' => "{$context}/{$name}Policy", 
-            '--model' => "App\\Models\\{$context}\\{$name}"
-        ]);
+        $this->call('make:policy', ['name' => "{$context}/{$name}Policy", '--model' => "App\\Models\\{$context}\\{$name}"]);
     }
 
     protected function createFactory($name, $context)
     {
-        $this->call('make:factory', [
-            'name' => "{$context}/{$name}Factory", 
-            '--model' => "App\\Models\\{$context}\\{$name}"
-        ]);
+        $this->call('make:factory', ['name' => "{$context}/{$name}Factory", '--model' => "App\\Models\\{$context}\\{$name}"]);
     }
 
     protected function createSeeder($name, $context)
