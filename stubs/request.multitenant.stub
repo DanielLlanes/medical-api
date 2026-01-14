@@ -8,16 +8,15 @@ class {{ class }} extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return true; // Cambiar según política de seguridad
     }
 
-    /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            // El campo 'code' no se valida aquí porque lo genera el Trait
         ];
     }
 }
+2. M
