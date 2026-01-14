@@ -6,7 +6,10 @@ use Illuminate\Bus\Queueable;
 use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Queue\SerializesModels;
+use App\Mail\Landlord\VerifyTenantMail;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -56,6 +59,8 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
             ]);
 
             Log::info("Base de datos creada y migrada para el Tenant: {$this->tenant->name}");
+
+            Mail::to($this->tenant->email)->send(new VerifyTenantMail($this->tenant));
 
         } catch (\Exception $e) {
             Log::error("Error aprovisionando la DB para el Tenant {$this->tenant->id}: " . $e->getMessage());
