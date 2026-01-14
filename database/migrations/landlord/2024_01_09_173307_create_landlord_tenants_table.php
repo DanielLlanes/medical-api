@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // Nombre comercial
-            
+            $table->string('email'); // Nombre comercial
             // Acceso técnico
             $table->string('domain')->unique(); // el-perez
             $table->string('custom_domain')->unique()->nullable(); // clinica-perez.com (PREMIUM)
@@ -22,9 +22,9 @@ return new class extends Migration
             
             // Estado y Relación
             $table->foreignId('plan_id')->constrained(); 
-            $table->enum('status', ['trialing', 'active', 'past_due', 'suspended', 'banned'])->default('pending');
-            $table->timestamp('verified_at')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->enum('status', ['pending', 'trialing', 'active', 'past_due', 'suspended', 'banned', 'error'])->default('pending');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->boolean('is_active')->default(false);
             $table->string('code')->unique();
             $table->timestamps();
             $table->softDeletes(); 

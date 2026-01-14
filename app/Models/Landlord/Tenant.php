@@ -19,6 +19,7 @@ class Tenant extends SpatieTenant
 
     protected $fillable = [
         'name', 
+        'email',
         'domain', 
         'custom_domain', 
         'database', 
@@ -26,7 +27,7 @@ class Tenant extends SpatieTenant
         'status',
         'is_active',
         'code',
-        'verified_at'
+        'email_verified_at'
     ];
 
     /**
@@ -61,6 +62,7 @@ class Tenant extends SpatieTenant
     protected $casts = [
         'is_active' => 'boolean',
         'deleted_at' => 'datetime',
+        'email_verified_at' => 'datetime',
     ];
 
 }

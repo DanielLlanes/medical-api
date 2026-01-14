@@ -35,11 +35,10 @@ class TenantController extends BaseLandlordController
 
         return Tenant::create([
             'name'      => $request->name,
+            'email'      => $request->email,
             'domain'    => TenantNamingHelper::generateSubdomain($request->name),
             'database'  => TenantNamingHelper::generateDatabaseName($request->name),
             'plan_id'   => $plan->id,
-            'is_active' => false,
-            'status'    => 'pending',
         ]);
     }
 
