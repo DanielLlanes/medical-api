@@ -2,74 +2,117 @@
 
 namespace App\Jobs\Landlord;
 
+use Throwable;
 use Illuminate\Bus\Queueable;
-use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use App\Mail\Landlord\VerifyTenantMail;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
+use App\Models\Landlord\Tenant;
+use App\Mail\Landlord\VerifyTenantMail;
 
 class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $tenant;
+    public int $tries = 3;
+    public int $timeout = 300;
 
-    /**
-     * El Job recibe el modelo del Tenant
-     */
+    protected Tenant $tenant;
+
     public function __construct(Tenant $tenant)
     {
-        $this->tenant = $tenant;
+        // Evita problemas si el modelo cambia entre reintentos
+        $this->tenant = $tenant->fresh();
+    }
+
+    public function handle(): void
+    {
+        Log::info("🚀 Iniciando provisión del Tenant", [
+            'tenant_id' => $this->tenant->id,
+            'database'  => $this->tenant->database,
+        ]);
+
+        try {
+            $this->createDatabase();
+            $this->runMigrations();
+            $this->runSeeders();
+            $this->activateTenant();
+            $this->sendVerificationEmail();
+
+            Log::info("✅ Tenant provisionado correctamente", [
+                'tenant_id' => $this->tenant->id,
+            ]);
+        } catch (Throwable $e) {
+            $this->handleFailure($e);
+            throw $e; // Permite reintentos automáticos
+        }
     }
 
     /**
-     * Aquí ocurre la magia
+     * ------------------------
+     * Acciones
+     * ------------------------
      */
-    public function handle(): void
+
+    protected function createDatabase(): void
     {
-        try {
-            // 1. Crear la base de datos física en MySQL
-            // Usamos el nombre que guardamos en la tabla tenants
-            DB::statement("CREATE DATABASE IF NOT EXISTS `{$this->tenant->database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+        DB::statement(sprintf(
+            'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+            $this->tenant->database
+        ));
+    }
 
-            // 2. Ejecutar las migraciones del Tenant
-            // CORRECCIÓN: Usar la sintaxis correcta de tenants:artisan
-            Artisan::call('tenants:artisan', [
-                'artisanCommand' => 'migrate --database=tenant --path=database/migrations/tenant', 
-                '--tenant' => $this->tenant->id,
-            ]);
+    protected function runMigrations(): void
+    {
+        Artisan::call('tenants:artisan', [
+            'artisanCommand' => 'migrate --database=tenant --path=database/migrations/tenant --force',
+            '--tenant'       => $this->tenant->id,
+        ]);
+    }
 
-            // 3. Opcional: Ejecutar Seeders básicos para el nuevo cliente
-            Artisan::call('tenants:artisan', [
-                'artisanCommand' => 'db:seed --database=tenant --class=DatabaseSeeder', 
-                '--tenant' => $this->tenant->id,
-            ]);
+    protected function runSeeders(): void
+    {
+        Artisan::call('tenants:artisan', [
+            'artisanCommand' => 'db:seed --database=tenant --class=DatabaseSeeder --force',
+            '--tenant'       => $this->tenant->id,
+        ]);
+    }
 
-            // 4. Actualizar el estado del Tenant a 'active'
-            $this->tenant->update([
-                'status' => 'active'
-            ]);
+    protected function activateTenant(): void
+    {
+        $this->tenant->update([
+            'status'       => 'active',
+            'provisioned_at' => now(),
+        ]);
+    }
 
-            Log::info("Base de datos creada y migrada para el Tenant: {$this->tenant->name}");
+    protected function sendVerificationEmail(): void
+    {
+        Mail::to($this->tenant->email)
+            ->queue(new VerifyTenantMail($this->tenant));
+    }
 
-            Mail::to($this->tenant->email)->send(new VerifyTenantMail($this->tenant));
+    /**
+     * ------------------------
+     * Error handling
+     * ------------------------
+     */
 
-        } catch (\Exception $e) {
-            Log::error("Error aprovisionando la DB para el Tenant {$this->tenant->id}: " . $e->getMessage());
-            
-            $this->tenant->update([
-                'status' => 'suspended' // O un estado de 'error' para que tú revises
-            ]);
+    protected function handleFailure(Throwable $e): void
+    {
+        Log::error("❌ Error aprovisionando Tenant", [
+            'tenant_id' => $this->tenant->id,
+            'error'     => $e->getMessage(),
+        ]);
 
-            throw $e; // Reintenta el job si falla
-        }
+        $this->tenant->update([
+            'status' => 'error',
+        ]);
     }
 }

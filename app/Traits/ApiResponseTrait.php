@@ -6,30 +6,30 @@ use Illuminate\Http\JsonResponse;
 
 trait ApiResponseTrait
 {
-    /**
-     * Respuesta exitosa estandarizada
-     */
-    public function sendResponse($result, $message, $code = 200): JsonResponse
-    {
+    protected function sendResponse(
+        mixed $data,
+        string $message = 'OK',
+        int $code = 200
+    ): JsonResponse {
         return response()->json([
             'success' => true,
-            'data'    => $result,
             'message' => $message,
+            'data'    => $data,
         ], $code);
     }
 
-    /**
-     * Respuesta de error estandarizada
-     */
-    public function sendError($error, $errorMessages = [], $code = 404): JsonResponse
-    {
+    protected function sendError(
+        string $message,
+        mixed $errors = null,
+        int $code = 400
+    ): JsonResponse {
         $response = [
             'success' => false,
-            'message' => $error,
+            'message' => $message,
         ];
 
-        if (!empty($errorMessages)) {
-            $response['errors'] = $errorMessages;
+        if ($errors !== null) {
+            $response['errors'] = $errors;
         }
 
         return response()->json($response, $code);
