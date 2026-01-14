@@ -51,4 +51,13 @@ class TenantNamingHelper
 
         return substr("{$prefix}_{$slug}_{$suffix}", 0, 45);
     }
+
+    public static function generateSubdomain(string $name): string {
+        $slug = Str::slug($name);
+        $baseDomain = config('custom.base_domain'); // medical.test
+        
+        return "{$slug}.{$baseDomain}";
+    }
+
+
 }
