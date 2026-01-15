@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('domain')->unique(); // el-perez
             $table->string('custom_domain')->unique()->nullable(); // clinica-perez.com (PREMIUM)
             $table->string('database')->unique();
+
+            $table->json('setup_data')->nullable();
             
             // Estado y Relación
             $table->foreignId('plan_id')->constrained(); 

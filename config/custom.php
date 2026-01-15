@@ -19,5 +19,6 @@ return [
     'db_main_prefix' => 'DBs', // El prefijo maestro
     'app_name_slug'  => env('APP_NAME', 'medicalapi'), // El nombre de tu app
     'base_domain'    => env('TENANT_BASE_DOMAIN', 'medical.test'), // <--- Nuevo
-    "isProduction" => env('APP_ENV') == 'local' ? false:true
+    "isProduction" => env('APP_ENV') == 'local' ? false:true,
+    'create_tenant_on_registration' => env('CREATE_TENANT_ON_REGISTRATION', true),
 ];

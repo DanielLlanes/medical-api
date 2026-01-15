@@ -18,16 +18,16 @@ class Tenant extends SpatieTenant
     const CODE_PREFIX = 'TEN';
 
     protected $fillable = [
-        'name', 
+        'name',
         'email',
-        'domain', 
-        'custom_domain', 
-        'database', 
-        'plan_id', 
+        'domain',
+        'database',
+        'setup_data',
+        'plan_id',
         'status',
+        'email_verified_at',
         'is_active',
         'code',
-        'email_verified_at'
     ];
 
     /**
@@ -60,6 +60,7 @@ class Tenant extends SpatieTenant
     // El atributo $dates está obsoleto en Laravel 10+, 
     // se recomienda usar $casts si necesitas fechas especiales.
     protected $casts = [
+        'setup_data' => 'array',
         'is_active' => 'boolean',
         'deleted_at' => 'datetime',
         'email_verified_at' => 'datetime',
