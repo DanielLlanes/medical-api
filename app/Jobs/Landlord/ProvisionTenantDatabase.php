@@ -4,17 +4,24 @@ namespace App\Jobs\Landlord;
 
 use Throwable;
 use Illuminate\Bus\Queueable;
+use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Queue\SerializesModels;
+use App\Mail\Landlord\VerifyTenantMail;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+
+// Modelos
 use Illuminate\Foundation\Bus\Dispatchable;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
-use App\Models\Landlord\Tenant;
-use App\Mail\Landlord\VerifyTenantMail;
+
+// Mails
+use App\Mail\Landlord\TenantDatabaseReadyMail;
+use App\Models\Tenant\User; // El modelo del Tenant con el trait de conexión
+// use App\Mail\Landlord\TenantReadyMail; // Descomentar cuando crees este mail
 
 class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 {
@@ -25,12 +32,17 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 
     protected Tenant $tenant;
 
+    /**
+     * Crear una nueva instancia del Job.
+     */
     public function __construct(Tenant $tenant)
     {
-        // Evita problemas si el modelo cambia entre reintentos
         $this->tenant = $tenant->fresh();
     }
 
+    /**
+     * Ejecutar el Job.
+     */
     public function handle(): void
     {
         Log::info("🚀 Iniciando provisión del Tenant", [
@@ -42,24 +54,28 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
             $this->createDatabase();
             $this->runMigrations();
             $this->runSeeders();
+            
+            // Creamos al usuario administrador en la nueva DB
+            $this->createAdminUser();
+
+            // Marcamos como activo y provisionado
             $this->activateTenant();
-            $this->sendVerificationEmail();
+
+            // Enviamos la notificación correspondiente
+            $this->handleNotification();
 
             Log::info("✅ Tenant provisionado correctamente", [
                 'tenant_id' => $this->tenant->id,
             ]);
         } catch (Throwable $e) {
             $this->handleFailure($e);
-            throw $e; // Permite reintentos automáticos
+            throw $e;
         }
     }
 
     /**
-     * ------------------------
-     * Acciones
-     * ------------------------
+     * Crea la base de datos física.
      */
-
     protected function createDatabase(): void
     {
         DB::statement(sprintf(
@@ -68,6 +84,9 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
         ));
     }
 
+    /**
+     * Ejecuta las migraciones en la base de datos del tenant.
+     */
     protected function runMigrations(): void
     {
         Artisan::call('tenants:artisan', [
@@ -76,6 +95,9 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
         ]);
     }
 
+    /**
+     * Ejecuta los seeders (si existen) para el tenant.
+     */
     protected function runSeeders(): void
     {
         Artisan::call('tenants:artisan', [
@@ -84,26 +106,57 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
         ]);
     }
 
+    /**
+     * Crea el primer usuario administrador usando los datos de registro.
+     */
+    protected function createAdminUser(): void
+    {
+        // Switch a la conexión del tenant
+        $this->tenant->makeCurrent();
+
+        $adminData = $this->tenant->setup_data;
+
+        User::create([
+            'name'      => $adminData['admin_name'] ?? $this->tenant->name,
+            'email'     => $adminData['admin_email'],
+            'password'  => $adminData['admin_password'], // Ya viene hasheado
+            'is_active' => true,
+        ]);
+
+        // Regresar a la conexión landlord
+        $this->tenant->forgetCurrent();
+    }
+
+    /**
+     * Decide qué mail enviar según el estado de verificación.
+     */
+    protected function handleNotification(): void
+    {
+        if ($this->tenant->email_verified_at === null) {
+            // Caso: Registro con creación inmediata (necesita verificar)
+            Mail::to($this->tenant->email)->queue(new VerifyTenantMail($this->tenant));
+        } else {
+            
+           Mail::to($this->tenant->email)->queue(new TenantDatabaseReadyMail($this->tenant));
+        
+            Log::info("📧 Mail de 'Instancia Operativa' enviado a: {$this->tenant->email}");
+        }
+    }
+
+    /**
+     * Actualiza el estado del Tenant en el Landlord.
+     */
     protected function activateTenant(): void
     {
         $this->tenant->update([
-            'status'       => 'active',
+            'status'         => 'active',
             'provisioned_at' => now(),
         ]);
     }
 
-    protected function sendVerificationEmail(): void
-    {
-        Mail::to($this->tenant->email)
-            ->queue(new VerifyTenantMail($this->tenant));
-    }
-
     /**
-     * ------------------------
-     * Error handling
-     * ------------------------
+     * Gestión de errores.
      */
-
     protected function handleFailure(Throwable $e): void
     {
         Log::error("❌ Error aprovisionando Tenant", [

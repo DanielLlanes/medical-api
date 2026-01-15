@@ -6,6 +6,7 @@ use App\Models\Landlord\Plan;
 use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\TenantNamingHelper;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Landlord\Tenant\StoreTenantRequest;
 
 class TenantController extends BaseLandlordController
@@ -16,9 +17,14 @@ class TenantController extends BaseLandlordController
             return $this->createTenant($request);
         });
 
+        // Ajustamos el mensaje según la configuración
+        $message = config('custom.create_tenant_on_registration') 
+            ? 'Tenant registrado con éxito. La base de datos se está aprovisionando.' 
+            : 'Tenant registrado con éxito. Por favor, verifica tu correo para activar tu cuenta.';
+
         return $this->sendResponse(
             $tenant,
-            'Tenant registrado con éxito. La base de datos se está aprovisionando.',
+            $message,
             201
         );
     }
@@ -39,6 +45,10 @@ class TenantController extends BaseLandlordController
             'domain'    => TenantNamingHelper::generateSubdomain($request->name),
             'database'  => TenantNamingHelper::generateDatabaseName($request->name),
             'plan_id'   => $plan->id,
+            'setup_data' => [
+                'admin_email'    => $request->email,
+                'admin_password' => Hash::make($request->password), 
+            ],
         ]);
     }
 
