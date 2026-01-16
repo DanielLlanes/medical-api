@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Landlord\TenantVerificationController;
+use App\Http\Controllers\Public\TenantVerificationController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -12,14 +13,15 @@ use App\Http\Controllers\Landlord\TenantVerificationController;
 | Prefijo aplicado en bootstrap/app.php: /api/v1
 */
 
+
 Route::name('public.tenants.')->group(function () {
 
     // Verificación de cuenta del tenant (link firmado)
     Route::get(
         'verify-account/{tenant}',
-        TenantVerificationController::class
+        TenantVerificationController::class   // Invocable, Laravel reconoce __invoke()
     )
-    ->middleware('signed')
-    ->name('verify');
+    ->middleware('signed')                   // Link firmado
+    ->name('verify');                        // Route name completo: public.tenants.verify
 
 });
