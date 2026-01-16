@@ -1,27 +1,40 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Landlord\TenantController;
-use App\Http\Controllers\Landlord\TenantVerificationController;
 
 /*
 |--------------------------------------------------------------------------
-| Landlord Routes (System Administration)
+| LANDLORD ROUTES
 |--------------------------------------------------------------------------
+| Contexto: Administración del sistema
+| Middleware aplicado en bootstrap/app.php
+| Prefijo aplicado: /api/v1
 */
 
-Route::prefix('v1')->group(function () {
+Route::name('landlord.tenants.')->group(function () {
 
-    // Gestión de Clínicas (Tenants)
-    Route::apiResource('tenants', TenantController::class);
+    // Listar tenants
+    Route::get('tenants', [TenantController::class, 'index'])
+        ->name('list');
 
-    /**
-     * Ruta para la verificación de cuenta
-     * La URL será: /api/landlord/v1/verify-account/{tenant}?expires=...&signature=...
-     */
-    Route::get('/verify-account/{tenant}', TenantVerificationController::class)
-    ->name('tenant.verify')
-    ->middleware('signed');
+    // Crear tenant
+    Route::post('tenants', [TenantController::class, 'store'])
+        ->name('store');
 
+    // Ver tenant
+    Route::get('tenants/{tenant}', [TenantController::class, 'show'])
+        ->name('show');
+
+    // Actualizar tenant
+    Route::put('tenants/{tenant}', [TenantController::class, 'update'])
+        ->name('update');
+
+    // Eliminar tenant
+    Route::delete('tenants/{tenant}', [TenantController::class, 'destroy'])
+        ->name('destroy');
+
+    // Acción especial (ejemplo estilo monolito)
+    Route::post('tenants/status', [TenantController::class, 'changeStatus'])
+        ->name('status');
 });

@@ -7,27 +7,43 @@ use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        web: __DIR__.'/../routes/web.php',        // Rutas web (landing si aplica)
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            // Rutas para el Administrador del Sistema (Landlord)
-            Route::middleware('api')
-                ->prefix('landlord')
-                ->group(base_path('routes/landlord.php'));
 
-            // Rutas para las Clínicas (Tenants)
-            Route::middleware(['api', 'tenant'])
+            // Todas las APIs versionadas
+            Route::middleware('api')
                 ->prefix('api/v1')
-                ->group(base_path('routes/tenant.php'));
-        },
+                ->group(function () {
+
+                    // Rutas del LANDLORD (rol global del sistema)
+                    // URLs limpias, el rol se controla por middleware
+                    Route::middleware('landlord')
+                        ->group(base_path('routes/landlord.php'));
+
+                    // Rutas del TENANT (requiere tenant identificado)
+                    Route::middleware('tenant')
+                        ->group(base_path('routes/tenant.php'));
+
+                    // Rutas PUBLICAS (sin auth, ej: verify account)
+                    Route::group(base_path('routes/public.php'));
+                });
+        }
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Creamos el grupo 'tenant' tal cual lo pide la documentación
+
+        // Middleware para resolver el tenant (Spatie)
         $middleware->group('tenant', [
             \Spatie\Multitenancy\Http\Middleware\NeedsTenant::class,
         ]);
+
+        // Middleware para asegurar rol landlord
+        $middleware->group('landlord', [
+            \App\Http\Middleware\EnsureUserIsLandlord::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+        // Manejo de excepciones (opcional)
+    })
+    ->create();
