@@ -41,7 +41,7 @@ class VerifyTenantMail extends Mailable implements ShouldQueue, NotTenantAware
     public function content(): Content
     {
        $verificationUrl = URL::temporarySignedRoute(
-            'tenant.verify',
+            'public.tenants.verify',
             now()->addDays(30), // Cambiado a 30 días
             ['tenant' => $this->tenant->id]
         );

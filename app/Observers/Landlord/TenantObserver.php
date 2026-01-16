@@ -4,25 +4,27 @@ namespace App\Observers\Landlord;
 
 use App\Models\Landlord\Tenant;
 use App\Jobs\Landlord\ProvisionTenantDatabase;
-use App\Mail\Landlord\VerifyTenantMail; // Importante
-use Illuminate\Support\Facades\Mail;   // Importante
+use Illuminate\Support\Facades\Mail;
+use App\Mail\Landlord\VerifyTenantMail;
 use Illuminate\Support\Facades\Log;
 
 class TenantObserver
 {
     public function created(Tenant $tenant): void
     {
+        // 1️⃣ Preparar datos básicos (Landlord)
         $this->createBusinessProfile($tenant);
         $this->createTrialSubscription($tenant);
 
+        // 2️⃣ Decidir comunicación según configuración
         if (config('custom.create_tenant_on_registration')) {
-            // Flujo Directo: El Job se encarga de crear DB y mandar mail
-            $this->provisionTenantDatabase($tenant);
+            // SI ES ON-THE-FLY: El Job hará TODO (crear DB y notificar)
+            ProvisionTenantDatabase::dispatch($tenant)->afterCommit();
+            Log::info("🚀 Job de aprovisionamiento disparado (on-the-fly) para Tenant {$tenant->id}");
         } else {
-            // Flujo Diferido: Como el Job no corre aún, mandamos el mail de verificación AQUÍ
-            Mail::to($tenant->email)->send(new VerifyTenantMail($tenant));
-            
-            Log::info("📧 Mail de verificación enviado desde Observer para Tenant: {$tenant->id}");
+            // SI ES DIFERIDO: Solo enviamos verificación. La DB se creará tras verificar.
+            Mail::to($tenant->email)->queue(new VerifyTenantMail($tenant));
+            Log::info("📧 Mail de verificación enviado (flujo diferido) para Tenant {$tenant->id}");
         }
     }
 
@@ -42,10 +44,5 @@ class TenantObserver
             'trial_ends_at' => now()->addDays(14),
             'is_active'     => true,
         ]);
-    }
-
-    protected function provisionTenantDatabase(Tenant $tenant): void
-    {
-        ProvisionTenantDatabase::dispatch($tenant)->afterCommit();
     }
 }
