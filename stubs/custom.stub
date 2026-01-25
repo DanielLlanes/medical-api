@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }};
+
+{{ keyword }} {{ class }}
+{
+    /**
+     * Lógica inicial para {{ class }}
+     */
+}

@@ -1,0 +1,83 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\{{ context }}\{{ baseController }};
+use Illuminate\Http\JsonResponse;
+use App\Traits\ApiResponseTrait;
+use Exception;
+// Aquí tu comando reemplazará estos placeholders por las rutas de tus Requests
+use {{ storeRequestPath }};
+use {{ updateRequestPath }};
+
+class {{ class }} extends {{ baseController }}
+{
+    use ApiResponseTrait;
+
+    /**
+     * Lista de recursos.
+     */
+    public function index(): JsonResponse
+    {
+        try {
+            // $data = {{ model }}::all();
+            return $this->sendResponse([], 'Registros recuperados con éxito.');
+        } catch (Exception $e) {
+            return $this->sendError('Error al recuperar los registros.', [$e->getMessage()]);
+        }
+    }
+
+    /**
+     * Almacenar un nuevo recurso.
+     */
+    public function store({{ storeRequestClass }} $request): JsonResponse
+    {
+        try {
+            // Al usar {{ storeRequestClass }}, el método validated() ya funciona
+            // $item = {{ model }}::create($request->validated());
+            return $this->sendResponse([], 'Registro creado con éxito.', 201);
+        } catch (Exception $e) {
+            return $this->sendError('Error al crear el registro.', [$e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Mostrar un recurso específico.
+     */
+    public function show(int $id): JsonResponse
+    {
+        try {
+            // $item = {{ model }}::findOrFail($id);
+            return $this->sendResponse([], 'Registro encontrado.');
+        } catch (Exception $e) {
+            return $this->sendError('Registro no encontrado.', [$e->getMessage()], 404);
+        }
+    }
+
+    /**
+     * Actualizar un recurso específico.
+     */
+    public function update({{ updateRequestClass }} $request, int $id): JsonResponse
+    {
+        try {
+            // $item = {{ model }}::findOrFail($id);
+            // $item->update($request->validated());
+            return $this->sendResponse([], 'Registro actualizado con éxito.');
+        } catch (Exception $e) {
+            return $this->sendError('Error al actualizar el registro.', [$e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Eliminar un recurso específico.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            // {{ model }}::destroy($id);
+            return $this->sendResponse(null, 'Registro eliminado correctamente.', 200);
+        } catch (Exception $e) {
+            return $this->sendError('Error al eliminar el registro.', [$e->getMessage()]);
+        }
+    }
+}

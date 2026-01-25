@@ -1,0 +1,35 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasReferenceCodeTrait as HasReferenceCode;
+{{ traitImport }}
+
+class {{ class }} extends Model
+{
+    use HasFactory, SoftDeletes, HasReferenceCode, {{ traitName }};
+
+     const CODE_PREFIX = 'REF';
+
+     protected $fillable = [ ];
+
+    /**
+     * Los atributos que deben ser convertidos a fechas.
+     * En Laravel moderno se prefiere usar $casts.
+     * * @var array<string, string>
+     */
+    protected $casts = [
+        'deleted_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Indica si el modelo debe tener timestamps.
+     * * @var bool
+     */
+    public $timestamps = true;
+}
