@@ -15,10 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
 
-            // IMPORTANTE: ¿Qué plan compró?
-            $table->foreignId('plan_id')->constrained();
 
-            // ¿Mensual o Anual? (Para el descuento del 25% de tu landing)
+            $table->foreignId('plan_id')->constrained();
+            
             $table->enum('billing_period', ['monthly', 'yearly'])->default('monthly');
 
             $table->string('gateway')->default('mercadopago');

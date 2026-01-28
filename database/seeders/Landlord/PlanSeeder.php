@@ -6,7 +6,7 @@ namespace Database\Seeders\Landlord;
 use Illuminate\Support\Str;
 use App\Models\Landlord\Plan;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+//use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PlanSeeder extends Seeder
 {
@@ -23,6 +23,7 @@ class PlanSeeder extends Seeder
                 'limit_users' => 1,
                 'has_custom_domain' => false,
                 'trial_days' => 14,
+                'annual_discount' => 0.50,
                 'is_recommended' => false,
                 'features' => [
                     'Expediente NOM-024 Básico',
@@ -38,6 +39,7 @@ class PlanSeeder extends Seeder
                 'limit_users' => 3,
                 'has_custom_domain' => false,
                 'trial_days' => 14,
+                'annual_discount' => 0.50,
                 'is_recommended' => false,
                 'features' => [
                     'Expediente NOM-024 Completo',
@@ -54,6 +56,7 @@ class PlanSeeder extends Seeder
                 'limit_users' => 10,
                 'has_custom_domain' => true,
                 'trial_days' => 14,
+                'annual_discount' => 0.50,
                 'is_recommended' => true,
                 'features' => [
                     'HL7 / FHIR Integrado',
@@ -70,6 +73,7 @@ class PlanSeeder extends Seeder
                 'limit_users' => 999, // Ilimitados
                 'has_custom_domain' => true,
                 'trial_days' => 14,
+                'annual_discount' => 0.50,
                 'is_recommended' => false,
                 'features' => [
                     'Médicos y Usuarios Ilimitados',
@@ -91,10 +95,12 @@ class PlanSeeder extends Seeder
                     'has_custom_domain' => $planData['has_custom_domain'],
                     'is_recommended' => $planData['is_recommended'],
                     'trial_days' => $planData['trial_days'],
+                    'annual_discount' => $planData['annual_discount'],
                     'features' => $planData['features'],
                     'is_active' => true,
                     'status' => 'active',
-                    'code' => 'PLN-' . strtoupper(Str::random(12)),
+                    'code' => Plan::generateReferenceCode('PLN'),
+                    //'code' => 'PLN-' . strtoupper(Str::random(12)),
                 ]
             );
         }

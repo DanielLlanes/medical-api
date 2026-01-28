@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->default(0);
-            $table->decimal('price_annual', 10, 2)->default(0); // Sugerencia: para el descuento del 25%
+            $table->decimal('annual_discount', 10, 2)->default(0); // Sugerencia: para el descuento del 25%
 
             $table->integer('limit_users')->default(1);
             $table->integer('limit_storage_gb')->default(1); // Sugerencia: control de archivos médicos
