@@ -18,15 +18,18 @@ class Tenant extends SpatieTenant
     const CODE_PREFIX = 'TEN';
 
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'company',  // <--- Asegúrate de que esté aquí
-    'domain',
-    'database',
-    'setup_data',
-    'plan_id'
-];
+        'name',
+        'email',
+        'company',
+        'domain',
+        'database',
+        'plan_id',
+        'status',
+        'email_verified_at',
+        'is_active',
+        'setup_data',
+        'code',
+    ];
 
     /**
      * El Tenant pertenece a un plan específico.

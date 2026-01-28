@@ -6,21 +6,24 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
+use App\Traits\HasReferenceCodeTrait as HasReferenceCode;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, UsesTenantConnection;
+    use HasApiTokens, Notifiable, HasReferenceCode, UsesTenantConnection;
 
     /**
-     * IMPORTANTE: No definimos la conexión aquí para que 
+     * IMPORTANTE: No definimos la conexión aquí para que
      * spatie-multitenancy la gestione dinámicamente.
      */
-    
+    const CODE_PREFIX = 'USR';
     protected $fillable = [
         'name',
         'email',
         'password',
         'is_active',
+        'email_verified_at',
+        'code',
     ];
 
     protected $hidden = [
