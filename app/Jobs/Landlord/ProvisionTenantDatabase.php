@@ -2,23 +2,24 @@
 
 namespace App\Jobs\Landlord;
 
-use Throwable;
-use Illuminate\Bus\Queueable;
-use App\Models\Landlord\Tenant;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Spatie\Multitenancy\Jobs\NotTenantAware;
-use Illuminate\Support\Facades\Artisan;
-
-// Mails y Modelos
 use App\Mail\Landlord\TenantDatabaseReadyMail;
 use App\Mail\Landlord\VerifyTenantMail;
+use App\Models\Landlord\Tenant;
 use App\Models\Tenant\User;
+use Carbon\Carbon;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+
+// Mails y Modelos
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Throwable;
 
 class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 {
@@ -36,17 +37,31 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 
     public function handle(): void
     {
+        Log::info('🔥 HANDLE DEL JOB EJECUTADO 🔥');
         // Cambiamos el Log para usar la Company, es más fácil de identificar
         Log::info("🚀 Iniciando provisión para clínica: {$this->tenant->company}");
 
         try {
-            $this->createDatabase();
-            $this->provisionDatabase();
-            $this->createAdminUser();
-            $this->activateTenant();
-            $this->sendTenantEmails();
+            Log::info("--- 🏁 Iniciando Pasos de Provisión ---");
 
-            Log::info("✅ Entorno listo para el dominio: {$this->tenant->domain}");
+            $this->createDatabase();
+            Log::info("1. ✅ Base de Datos creada");
+
+            $this->provisionDatabase();
+            Log::info("2. ✅ Migraciones y Seeds completados");
+
+            $this->createAdminUser();
+            Log::info("3. ✅ Usuario Admin creado en el Tenant");
+
+            $this->activateTenant();
+            Log::info("4. ✅ Tenant marcado como 'active' en Landlord");
+
+            $this->sendTenantEmails();
+            Log::info("5. ✅ Proceso de emails finalizado");
+
+            Log::info("--- 🏁 Fin de Provisión con Éxito ---");
+
+            Log::info("✅ Entorno listo para el dominio ->: {$this->tenant->domain}");
         } catch (Throwable $e) {
             $this->handleFailure($e);
             throw $e;
@@ -78,16 +93,18 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 
     protected function createAdminUser(): void
     {
+
         $this->tenant->makeCurrent();
         $adminData = $this->tenant->setup_data;
-
         // Aseguramos que use el admin_name que ahora mandamos desde el controlador
+        Log::info('🔥 createAdminUser 🔥');
         User::updateOrCreate(
             ['email' => $adminData['admin_email']],
             [
-                'name'      => $adminData['admin_name'] ?? $this->tenant->name,
+                'name'      => $adminData['admin_name'],
                 'password'  => $adminData['admin_password'],
                 'is_active' => true,
+                'email_verified_at' => Carbon::now(),
             ]
         );
 
@@ -104,19 +121,24 @@ class ProvisionTenantDatabase implements ShouldQueue, NotTenantAware
 
     protected function sendTenantEmails(): void
     {
-        // Lógica de correos según el flujo configurado
+        Log::emergency('🔥 SEND TENANT EMAILS EJECUTADO 🔥');
+        // 1. REFRESCAR EL MODELO: Crucial para leer el email_verified_at actualizado
+        $this->tenant->refresh();
 
-        // 1. Flujo DIFERIDO: El usuario ya verificó su mail y la DB se acaba de crear.
+        Log::info("📧 Verificando envío de mail. Verificado: " . ($this->tenant->email_verified_at ? 'SI' : 'NO'));
+
+        // 2. Flujo DIFERIDO: El usuario ya verificó su mail y la DB se acaba de crear.
         if ($this->tenant->email_verified_at !== null && !config('custom.create_tenant_on_registration')) {
-            Mail::to($this->tenant->email)->queue(new TenantDatabaseReadyMail($this->tenant));
-            Log::info("📧 Enviado: TenantDatabaseReadyMail (Clínica lista para usar)");
+            // Usamos SEND en lugar de QUEUE porque ya estamos dentro de un proceso en segundo plano
+            Mail::to($this->tenant->email)->send(new TenantDatabaseReadyMail($this->tenant));
+            Log::info("📧 Enviado DIRECTO: TenantDatabaseReadyMail (Clínica lista para usar)");
             return;
         }
 
-        // 2. Flujo ON-THE-FLY: Se acaba de registrar, la DB ya está lista, ahora debe verificar su mail.
+        // 3. Flujo ON-THE-FLY: Se acaba de registrar, la DB ya está lista, ahora debe verificar su mail.
         if (config('custom.create_tenant_on_registration') && $this->tenant->email_verified_at === null) {
-            Mail::to($this->tenant->email)->queue(new VerifyTenantMail($this->tenant));
-            Log::info("📧 Enviado: VerifyTenantMail (Esperando verificación del Dr.)");
+            Mail::to($this->tenant->email)->send(new VerifyTenantMail($this->tenant));
+            Log::info("📧 Enviado DIRECTO: VerifyTenantMail (Esperando verificación del Dr.)");
         }
     }
 

@@ -15,8 +15,7 @@ use App\Http\Controllers\Tenant\AuthController;
 Route::name('tenant.auth.')->group(function () {
 
     // Login del tenant (sin auth por ahora)
-    Route::post('login', [AuthController::class, 'login'])
-        ->name('login');
+   
 
     // Placeholder para logout, register, etc.
     // Route::post('logout', [AuthController::class, 'logout'])->name('logout');

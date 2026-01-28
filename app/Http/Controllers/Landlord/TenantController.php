@@ -19,6 +19,7 @@ class TenantController extends BaseLandlordController
      */
     public function store(StoreTenantRequest $request)
     {
+
         // 1. Iniciamos la transacción para asegurar que el Tenant y sus relaciones (vía Observer) se creen bien
         $tenant = DB::transaction(function () use ($request) {
             return $this->createTenant($request);
@@ -46,23 +47,15 @@ class TenantController extends BaseLandlordController
                     ->where('is_active', true)
                     ->firstOrFail();
 
-        // LOG de depuración
-\Log::info('🔍 [API Register] Plan encontrado:', [
-    'slug_buscado' => $request->plan_id,
-    'plan_id_bd'   => $plan->id,
-    'plan_nombre'  => $plan->name,
-    'trial_days'   => $plan->trial_days
-]);
-
         // Generamos el subdominio limpio basado en la COMPANY
-        $slug = TenantNamingHelper::generateSubdomain($request->company);
-        $fullDomain = $slug . '.' . config('custom.base_domain');
+        $fullDomain = TenantNamingHelper::generateSubdomain($request->company);
+
 
         return Tenant::create([
             'name'      => $request->name,    // El nombre del Doctor
             'email'     => $request->email,   // Email del Doctor
             'company'   => $request->company, // Nombre de la Clínica (Asegúrate que exista en tu migración)
-            'domain'    => $fullDomain,       // daniel.medical.test
+            'domain'    => $fullDomain,      // daniel.medical.test
             'database'  => TenantNamingHelper::generateDatabaseName($request->company),
             'plan_id'   => $plan->id,
             'setup_data'=> [

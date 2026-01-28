@@ -28,6 +28,7 @@ class StoreTenantRequest extends FormRequest
             'password' => ['required', 'confirmed'],
             'company'  => ['required', 'string', 'max:100'],
             'plan_id'  => ['required', 'string', 'exists:landlord.plans,slug'],
+            'billing_period' => ['required', 'string', 'in:monthly,yearly'],
         ];
     }
 
@@ -58,6 +59,11 @@ class StoreTenantRequest extends FormRequest
             // Plan (El slug que validamos contra la DB)
             'plan_id.required' => 'No has seleccionado ningún plan de suscripción.',
             'plan_id.exists' => 'El plan seleccionado no es válido o ya no está disponible.',
+
+            // Mensaje para el periodo
+            'billing_period.required' => 'Debes seleccionar un ciclo de facturación (mensual o anual).',
+            'billing_period.in'       => 'El ciclo de facturación seleccionado no es válido.',
+
         ];
     }
 

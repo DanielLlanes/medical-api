@@ -41,10 +41,12 @@ class TenantObserver
     {
         $plan = $tenant->plan;
 
+        $billingPeriod = request()->input('billing_period', 'monthly');
+
         // No pasamos 'code', el HasReferenceCodeTrait lo generará automáticamente
         $tenant->subscription()->create([
             'plan_id'        => $tenant->plan_id,
-            'billing_period' => 'monthly',
+            'billing_period' => $billingPeriod,
             'gateway'        => 'mercadopago',
             'status'         => 'trialing',
             'trial_ends_at'  => now()->addDays($plan->trial_days ?? 14),

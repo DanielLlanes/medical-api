@@ -1,7 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Public\TenantVerificationController;
+use Illuminate\Support\Facades\Route;
+
 
 
 /*
@@ -17,11 +19,10 @@ use App\Http\Controllers\Public\TenantVerificationController;
 Route::name('public.tenants.')->group(function () {
 
     // Verificación de cuenta del tenant (link firmado)
-    Route::get(
-        'verify-account/{tenant}',
-        TenantVerificationController::class   // Invocable, Laravel reconoce __invoke()
-    )
+    Route::get('verify-account/{tenant}',TenantVerificationController::class)
     ->middleware('signed')                   // Link firmado
     ->name('verify');                        // Route name completo: public.tenants.verify
 
 });
+
+Route::get('/v1/plans-list', [PlanController::class, 'getActivePlans']);
