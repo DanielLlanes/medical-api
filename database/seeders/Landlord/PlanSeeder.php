@@ -15,7 +15,7 @@ class PlanSeeder extends Seeder
      */
     public function run(): void
     {
-       $planes = [
+        $planes = [
             [
                 'name' => 'Básico',
                 'slug' => 'plan_basico_01',
@@ -99,7 +99,7 @@ class PlanSeeder extends Seeder
                     'features' => $planData['features'],
                     'is_active' => true,
                     'status' => 'active',
-                    'code' => Plan::generateReferenceCode('PLN'),
+                    'code' => plan::generateReferenceCode('PLN'),
                     //'code' => 'PLN-' . strtoupper(Str::random(12)),
                 ]
             );

@@ -13,12 +13,7 @@ class Plan extends Model
 {
     use HasFactory, SoftDeletes, HasReferenceCode, UsesLandlordConnection;
 
-    protected $fillable = [
-        'name', 'slug', 'description', 'price', 'price_annual',
-        'limit_users', 'limit_storage_gb', 'trial_days',
-        'has_custom_domain', 'features', 'is_recommended',
-        'status', 'is_active', 'code'
-    ];
+    protected $fillable = ['name', 'slug', 'description', 'price', 'price_annual', 'limit_users', 'limit_storage_gb', 'trial_days', 'has_custom_domain', 'features', 'is_recommended', 'status', 'is_active', 'code'];
 
     const CODE_PREFIX = 'PLN';
 
@@ -32,11 +27,13 @@ class Plan extends Model
         return $this->hasMany(Tenant::class);
     }
 
-    protected $casts = [
-        'features' => 'array',
-        'is_recommended' => 'boolean',
-        'is_active' => 'boolean',
-        'has_custom_domain' => 'boolean',
-        'price' => 'decimal:2',
-    ];
+    protected $casts = ['features' => 'array', 'is_recommended' => 'boolean', 'is_active' => 'boolean', 'has_custom_domain' => 'boolean', 'price' => 'decimal:2',];
+
+    /**
+     * Scope para filtrar solo planes activos.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

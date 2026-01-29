@@ -2,8 +2,8 @@
 
 namespace App\Jobs\Landlord;
 
-use App\Mail\Landlord\TenantDatabaseReadyMail;
-use App\Mail\Landlord\VerifyTenantMail;
+use App\Mail\Landing\TenantDatabaseReadyMail;
+use App\Mail\Landing\VerifyTenantMail;
 use App\Models\Landlord\Tenant;
 use App\Models\Tenant\User;
 use Carbon\Carbon;

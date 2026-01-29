@@ -17,19 +17,7 @@ class Tenant extends SpatieTenant
 
     const CODE_PREFIX = 'TEN';
 
-    protected $fillable = [
-        'name',
-        'email',
-        'company',
-        'domain',
-        'database',
-        'plan_id',
-        'status',
-        'email_verified_at',
-        'is_active',
-        'setup_data',
-        'code',
-    ];
+    protected $fillable = ['name', 'email', 'company', 'domain', 'database', 'plan_id', 'status', 'email_verified_at', 'is_active', 'setup_data', 'code',];
 
     /**
      * El Tenant pertenece a un plan específico.
@@ -55,11 +43,6 @@ class Tenant extends SpatieTenant
         return $this->hasOne(Subscription::class);
     }
 
-    protected $casts = [
-        'setup_data' => 'array',
-        'is_active' => 'boolean',
-        'deleted_at' => 'datetime',
-        'email_verified_at' => 'datetime',
-    ];
+    protected $casts = ['setup_data' => 'array', 'is_active' => 'boolean', 'deleted_at' => 'datetime', 'email_verified_at' => 'datetime',];
 
 }
