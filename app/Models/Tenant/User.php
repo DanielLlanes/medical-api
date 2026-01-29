@@ -10,30 +10,9 @@ use App\Traits\HasReferenceCodeTrait as HasReferenceCode;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasReferenceCode, UsesTenantConnection;
-
-    /**
-     * IMPORTANTE: No definimos la conexión aquí para que
-     * spatie-multitenancy la gestione dinámicamente.
-     */
-    const CODE_PREFIX = 'USR';
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'is_active',
-        'email_verified_at',
-        'code',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'is_active' => 'boolean',
-    ];
-}
+    use HasApiTokens, Notifiable, HasReferenceCode, UsesTenantConnection; 
+    const CODE_PREFIX = 'USR';   
+    protected $fillable = [ 'name', 'email', 'password', 'is_active', 'email_verified_at', 'code', ];    
+    protected $hidden = [ 'password', 'remember_token', ];    
+    protected $casts = ['email_verified_at' => 'datetime', 'password' => 'hashed', 'is_active' => 'boolean',]; 
+ }

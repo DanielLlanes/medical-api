@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',       // Rutas web comunes
-        commands: __DIR__.'/../routes/console.php', // Rutas para comandos Artisan
+        web: __DIR__ . '/../routes/web.php',       // Rutas web comunes
+        commands: __DIR__ . '/../routes/console.php', // Rutas para comandos Artisan
         health: '/up',                           // Health check endpoint
         then: function () {
 
@@ -46,7 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             */
             Route::middleware('web')
                 ->group(function () {
-                    require base_path('routes/public.php');
+                    require base_path('routes/landing.php');
                 });
         },
     )

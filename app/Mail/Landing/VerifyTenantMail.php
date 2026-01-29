@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mail\Landlord;
+namespace App\Mail\Landing;
 
 use App\Models\Landlord\Tenant;
 use Illuminate\Bus\Queueable;

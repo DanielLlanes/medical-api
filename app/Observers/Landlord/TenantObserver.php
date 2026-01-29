@@ -5,7 +5,7 @@ namespace App\Observers\Landlord;
 use App\Models\Landlord\Tenant;
 use App\Jobs\Landlord\ProvisionTenantDatabase;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\Landlord\VerifyTenantMail;
+use App\Mail\Landing\VerifyTenantMail;
 use Illuminate\Support\Facades\Log;
 
 class TenantObserver
