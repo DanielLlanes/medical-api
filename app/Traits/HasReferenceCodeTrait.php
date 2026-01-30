@@ -13,13 +13,9 @@ trait HasReferenceCodeTrait
 
                 if (defined('static::CODE_PREFIX')) {
                     $prefix = static::CODE_PREFIX;
-                }
-
-                elseif (method_exists($model, 'getCodePrefix')) {
+                } elseif (method_exists($model, 'getCodePrefix')) {
                     $prefix = $model->getCodePrefix();
-                }
-
-                else {
+                } else {
                     $prefix = 'REF';
                 }
 
@@ -34,7 +30,7 @@ trait HasReferenceCodeTrait
 
 
         do {
-            $random = strtoupper(Str::random(4));
+            $random = strtoupper(Str::random(15));
             $code = "{$prefix}-{$date}-{$random}";
         } while (static::where('code', $code)->exists());
 

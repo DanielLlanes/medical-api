@@ -1,9 +1,24 @@
 <?php
 
-namespace App\Http\Controllers\Landing;
+namespace App\Http\Controllers\Landing;;
 
-use App\Http\Controllers\Controller;
+use App\Models\Landlord\Faq;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
-class FaqController extends BaseLandingController {}
+class FaqController extends BaseLandingController
+{
+
+	public function index(): JsonResponse
+	{
+
+		$faqs = Faq::active()->get();
+
+		return $this->sendResponse(
+			[
+				'faqs'  => $faqs
+			],
+			'Tarifario actualizado recuperado.',
+			200
+		);
+	}
+}
