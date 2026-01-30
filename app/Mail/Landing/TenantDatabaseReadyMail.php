@@ -37,7 +37,7 @@ class TenantDatabaseReadyMail extends Mailable implements ShouldQueue, NotTenant
         $loginUrl = $protocol . $this->tenant->domain . '/login';
 
         return new Content(
-            markdown: 'emails.landlord.tenants.tenant-database-ready',
+            view: 'emails.landlord.tenants.tenant-database-ready',
             with: [
                 'url' => $loginUrl,
                 'name' => $this->tenant->name,

@@ -1,22 +1,33 @@
-@component('mail::message')
-    # ¡Buenas noticias, Dr. {{ $name }}!
+@extends('emails.layout')
 
-    Nos alegra informarle que el entorno digital para **{{ $company }}** ha sido configurado exitosamente.
+@section('content')
+    <h1 style="color: #3d4852; font-size: 18px; font-weight: bold; margin-top: 0; text-align: left;">
+        ¡Buenas noticias, Dr. {{ $name }}!
+    </h1>
 
-    Ya puede acceder a su plataforma médica y comenzar a gestionar sus expedientes de forma segura.
+    <p style="font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
+        Nos alegra informarle que el entorno digital para <strong>{{ $company }}</strong> ha sido configurado
+        exitosamente.
+    </p>
 
-    @component('mail::button', ['url' => $url])
-        Ir al Panel de Control
-    @endcomponent
+    <p style="font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
+        Ya puede acceder a su plataforma médica y comenzar a gestionar sus <strong>expedientes</strong> de forma segura
+    </p>
 
-    ### Detalles de acceso:
-    * **Dominio:** [{{ $domain }}]({{ $url }})
-    * **Usuario:** Su correo electrónico registrado.
+    <table class="action" align="center" width="100%" cellpadding="0" cellspacing="0"
+        style="margin: 30px auto; text-align: center; width: 100%;">
+        <tr>
+            <td align="center">
+                <a href="{{ $url }}"
+                    style="border-radius: 4px; color: #fff; display: inline-block; text-decoration: none; background-color: #2d3748; border: 10px solid #2d3748; padding: 0 10px;">
+                    Ir al Panel de Control
+                </a>
+            </td>
+        </tr>
+    </table>
 
-    @if (isset($tempPassword))
-        * **Contraseña temporal:** `{{ $tempPassword }}`
-    @endif
-
-    Atentamente,<br>
-    El equipo de **{{ config('app.name') }}**
-@endcomponent
+    <p style="font-size: 14px; border-top: 1px solid #e8e5ef; padding-top: 25px;">
+        Si tienes problemas con el botón, copia y pega esta URL: <br>
+        <a href="{{ $url }}" style="color: #3869d4; word-break: break-all;">{{ $url }}</a>
+    </p>
+@endsection

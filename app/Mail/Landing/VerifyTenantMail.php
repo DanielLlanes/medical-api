@@ -49,7 +49,7 @@ class VerifyTenantMail extends Mailable implements ShouldQueue, NotTenantAware
         );
 
         return new Content(
-            markdown: 'emails.landlord.tenants.welcome_verify',
+            view: 'emails.landlord.tenants.welcome_verify',
             with: [
                 'url'  => $verificationUrl,
                 'name' => $this->tenant->name,
